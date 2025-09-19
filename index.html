@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Rubik's Cube Solver - Resuelve tu Cubo</title>
+    <meta name="description" content="La webapp más espectacular para resolver cubos de Rubik con visualización 3D interactiva">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    
+    <!-- Fuentes -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Iconos -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Meta tags para redes sociales -->
+    <meta property="og:title" content="Rubik's Cube Solver - Resuelve tu Cubo">
+    <meta property="og:description" content="La webapp más espectacular para resolver cubos de Rubik">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <style>
+        /* Carga inicial con animación */
+        .loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+        
+        .cube-loader {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border-radius: 10px;
+            animation: cubeRotate 2s infinite;
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+        }
+        
+        @keyframes cubeRotate {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.2); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        
+        .loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader inicial -->
+    <div class="loader" id="loader">
+        <div class="cube-loader"></div>
+    </div>
+
+    <!-- Contenedor principal -->
+    <div id="app" class="app">
+        <!-- Header espectacular -->
+        <header class="header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-cube"></i>
+                    <h1>Rubik's Solver</h1>
+                </div>
+                <nav class="nav">
+                    <button class="nav-btn active" data-section="solver">
+                        <i class="fas fa-magic"></i>
+                        <span>Resolver</span>
+                    </button>
+                    <button class="nav-btn" data-section="tutorial">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>Tutorial</span>
+                    </button>
+                    <button class="nav-btn" data-section="settings">
+                        <i class="fas fa-cog"></i>
+                        <span>Config</span>
+                    </button>
+                </nav>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="themeToggle">
+                        <i class="fas fa-sun"></i>
+                    </button>
+                    <button class="sound-toggle" id="soundToggle">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sección principal del solver -->
+        <main class="main-content">
+            <div class="solver-section active" id="solver">
+                <div class="solver-container">
+                    <!-- Panel izquierdo: Cubo 3D -->
+                    <div class="cube-panel">
+                        <div class="cube-container">
+                            <div id="cubeRenderer" class="cube-renderer"></div>
+                            <div class="cube-controls">
+                                <button class="control-btn primary" id="scrambleBtn">
+                                    <i class="fas fa-random"></i>
+                                    <span>Mezclar</span>
+                                </button>
+                                <button class="control-btn secondary" id="resetBtn">
+                                    <i class="fas fa-undo"></i>
+                                    <span>Reset</span>
+                                </button>
+                                <button class="control-btn success" id="solveBtn">
+                                    <i class="fas fa-magic"></i>
+                                    <span>¡Resolver!</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Estadísticas -->
+                        <div class="stats-panel">
+                            <div class="stat-card">
+                                <i class="fas fa-clock"></i>
+                                <div class="stat-info">
+                                    <span class="stat-label">Tiempo</span>
+                                    <span class="stat-value" id="timer">00:00</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-hand-paper"></i>
+                                <div class="stat-info">
+                                    <span class="stat-label">Movimientos</span>
+                                    <span class="stat-value" id="moveCounter">0</span>
+                                </div>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-trophy"></i>
+                                <div class="stat-info">
+                                    <span class="stat-label">Mejor tiempo</span>
+                                    <span class="stat-value" id="bestTime">--:--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel de entrada manual -->
+                        <div class="manual-input-panel">
+                            <button class="control-btn secondary" id="manualInputBtn">
+                                <i class="fas fa-edit"></i>
+                                <span>Entrada Manual</span>
+                            </button>
+                            <button class="control-btn secondary" id="historyBtn">
+                                <i class="fas fa-history"></i>
+                                <span>Historial</span>
+                            </button>
+                        </div>
+
+                        <!-- Panel de entrada manual -->
+                        <div class="manual-input-panel">
+                            <button class="control-btn secondary" id="manualInputBtn">
+                                <i class="fas fa-edit"></i>
+                                <span>Entrada Manual</span>
+                            </button>
+                            <button class="control-btn secondary" id="historyBtn">
+                                <i class="fas fa-history"></i>
+                                <span>Historial</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Panel derecho: Solución e información -->
+                    <div class="solution-panel">
+                        <div class="algorithm-display">
+                            <h3>
+                                <i class="fas fa-route"></i>
+                                Algoritmo de Solución
+                            </h3>
+                            <div class="algorithm-steps" id="algorithmSteps">
+                                <div class="empty-state">
+                                    <i class="fas fa-lightbulb"></i>
+                                    <p>Mezcla el cubo y presiona "Resolver" para ver los pasos</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="notation-guide">
+                            <h4><i class="fas fa-info-circle"></i> Notación</h4>
+                            <div class="notation-grid">
+                                <div class="notation-item">
+                                    <span class="notation-symbol">R</span>
+                                    <span class="notation-desc">Derecha horario</span>
+                                </div>
+                                <div class="notation-item">
+                                    <span class="notation-symbol">R'</span>
+                                    <span class="notation-desc">Derecha anti-horario</span>
+                                </div>
+                                <div class="notation-item">
+                                    <span class="notation-symbol">U</span>
+                                    <span class="notation-desc">Superior horario</span>
+                                </div>
+                                <div class="notation-item">
+                                    <span class="notation-symbol">F</span>
+                                    <span class="notation-desc">Frente horario</span>
+                                </div>
+                                <div class="notation-item">
+                                    <span class="notation-symbol">L</span>
+                                    <span class="notation-desc">Izquierda horario</span>
+                                </div>
+                                <div class="notation-item">
+                                    <span class="notation-symbol">D</span>
+                                    <span class="notation-desc">Inferior horario</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Tutorial -->
+            <div class="tutorial-section" id="tutorial">
+                <div class="tutorial-content">
+                    <h2><i class="fas fa-graduation-cap"></i> Aprende a Resolver el Cubo</h2>
+                    <div class="tutorial-grid">
+                        <div class="tutorial-card active-tutorial" data-tutorial="beginner">
+                            <div class="tutorial-icon">
+                                <i class="fas fa-play-circle"></i>
+                            </div>
+                            <h3>Método Principiante</h3>
+                            <p>Aprende paso a paso con el método más fácil para comenzar</p>
+                            <button class="tutorial-btn" data-action="start-beginner">Comenzar</button>
+                        </div>
+                        <div class="tutorial-card" data-tutorial="cfop">
+                            <div class="tutorial-icon">
+                                <i class="fas fa-rocket"></i>
+                            </div>
+                            <h3>Método CFOP</h3>
+                            <p>El método más popular usado por speedcubers profesionales</p>
+                            <button class="tutorial-btn" data-action="start-cfop">Explorar</button>
+                        </div>
+                        <div class="tutorial-card" data-tutorial="advanced">
+                            <div class="tutorial-icon">
+                                <i class="fas fa-brain"></i>
+                            </div>
+                            <h3>Algoritmos Avanzados</h3>
+                            <p>Domina OLL y PLL para resolver en menos de 20 segundos</p>
+                            <button class="tutorial-btn" data-action="start-advanced">Practicar</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Tutorial interactivo -->
+                    <div class="interactive-tutorial" id="interactiveTutorial" style="display: none;">
+                        <div class="tutorial-content-panel">
+                            <div class="tutorial-header">
+                                <h3 id="tutorialTitle">Tutorial Interactivo</h3>
+                                <button class="tutorial-close" id="closeTutorial">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            <div class="tutorial-steps" id="tutorialSteps">
+                                <!-- Contenido dinámico -->
+                            </div>
+                            <div class="tutorial-controls">
+                                <button class="control-btn secondary" id="prevStep">Anterior</button>
+                                <span class="step-indicator" id="stepIndicator">1 / 5</span>
+                                <button class="control-btn primary" id="nextStep">Siguiente</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sección Configuración -->
+            <div class="settings-section" id="settings">
+                <div class="settings-content">
+                    <h2><i class="fas fa-cog"></i> Configuración</h2>
+                    <div class="settings-grid">
+                        <div class="setting-group">
+                            <h3>Visualización</h3>
+                            <div class="setting-item">
+                                <label>Velocidad de animación</label>
+                                <input type="range" id="animationSpeed" min="0.5" max="2" step="0.1" value="1">
+                            </div>
+                            <div class="setting-item">
+                                <label>Mostrar guías</label>
+                                <input type="checkbox" id="showGuides" checked>
+                            </div>
+                        </div>
+                        <div class="setting-group">
+                            <h3>Audio</h3>
+                            <div class="setting-item">
+                                <label>Sonidos de movimiento</label>
+                                <input type="checkbox" id="moveSounds" checked>
+                            </div>
+                            <div class="setting-item">
+                                <label>Volumen</label>
+                                <input type="range" id="volume" min="0" max="1" step="0.1" value="0.5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Partículas de fondo -->
+        <div id="particles" class="particles"></div>
+
+        <!-- Modal de entrada manual -->
+        <div id="manualInputModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Entrada Manual de Colores</h3>
+                    <button class="modal-close" id="closeManualInput">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Haz clic en cada cuadrito para cambiar su color:</p>
+                    <div class="color-picker">
+                        <div class="color-option active" data-color="white" style="background: #ffffff; border: 2px solid #333;"></div>
+                        <div class="color-option" data-color="yellow" style="background: #ffff00;"></div>
+                        <div class="color-option" data-color="red" style="background: #ff4444;"></div>
+                        <div class="color-option" data-color="orange" style="background: #ff8800;"></div>
+                        <div class="color-option" data-color="green" style="background: #44ff44;"></div>
+                        <div class="color-option" data-color="blue" style="background: #4444ff;"></div>
+                    </div>
+                    <div class="cube-net" id="cubeNet">
+                        <!-- Se genera dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="control-btn secondary" id="resetColors">Reset</button>
+                    <button class="control-btn primary" id="applyColors">Aplicar</button>
+                </div>
+            </div>
+
+        <!-- Modal de entrada manual -->
+        <div id="manualInputModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Entrada Manual de Colores</h3>
+                    <button class="modal-close" id="closeManualInput">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p>Haz clic en cada cuadrito para cambiar su color:</p>
+                    <div class="color-picker">
+                        <div class="color-option active" data-color="white" style="background: #ffffff; border: 2px solid #333;"></div>
+                        <div class="color-option" data-color="yellow" style="background: #ffff00;"></div>
+                        <div class="color-option" data-color="red" style="background: #ff4444;"></div>
+                        <div class="color-option" data-color="orange" style="background: #ff8800;"></div>
+                        <div class="color-option" data-color="green" style="background: #44ff44;"></div>
+                        <div class="color-option" data-color="blue" style="background: #4444ff;"></div>
+                    </div>
+                    <div class="cube-net" id="cubeNet">
+                        <!-- Se genera dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="control-btn secondary" id="resetColors">Reset</button>
+                    <button class="control-btn primary" id="applyColors">Aplicar</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de historial -->
+        <div id="historyModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Historial de Soluciones</h3>
+                    <button class="modal-close" id="closeHistory">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="history-list" id="historyList">
+                        <!-- Se genera dinámicamente -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="control-btn danger" id="clearHistory">Limpiar Historial</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Efectos de celebración -->
+        <div id="celebration" class="celebration hidden">
+            <div class="celebration-content">
+                <h2>🎉 ¡Increíble!</h2>
+                <p>¡Has resuelto el cubo de Rubik!</p>
+                <div class="celebration-stats">
+                    <div class="celebration-stat">
+                        <span class="stat-number" id="celebrationTime">--:--</span>
+                        <span class="stat-text">Tiempo</span>
+                    </div>
+                    <div class="celebration-stat">
+                        <span class="stat-number" id="celebrationMoves">--</span>
+                        <span class="stat-text">Movimientos</span>
+                    </div>
+                </div>
+                <button class="celebration-btn" id="celebrationClose">¡Genial!</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="/src/main.js"></script>
+</body>
+</html>
